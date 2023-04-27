@@ -14,7 +14,7 @@ cd build
 
 git init
 git add -A
-git commit -m 'deploy'
+git commit -m 'deploy pages'
 
 # 如果发布到 https://<USERNAME>.github.io
 # git push -f https://${access_token}@github.com/Dcose/dcose.github.io.git master
