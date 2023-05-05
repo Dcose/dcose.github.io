@@ -66,7 +66,7 @@ const config = {
 			// Replace with your project's social card
 			// image: 'img/docusaurus-social-card.jpg',
 			navbar: {
-				title: 'Mirai的博客',
+				title: 'Mirai的记录',
 				hideOnScroll: true,
 				// logo: {
 				// 	alt: 'My Site Logo',
@@ -94,6 +94,18 @@ const config = {
 						docId: 'HTML',
 						position: 'right',
 						label: '正文',
+					},
+					{
+						type: 'doc',
+						docId: '📕 JavaScript/👻 this',
+						position: 'right',
+						label: 'JS',
+					},
+					{
+						type: 'doc',
+						docId: '💯 LeetCode/Two Sum',
+						position: 'right',
+						label: 'LC',
 					},
 					{
 						href: 'https://github.com/Dcose',
