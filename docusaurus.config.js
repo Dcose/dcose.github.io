@@ -114,6 +114,11 @@ const config = {
 					},
 				],
 			},
+			docs: {
+				sidebar: {
+					hideable: true,
+				},
+			},
 			prism: {
 				theme: lightCodeTheme,
 				darkTheme: darkCodeTheme,
