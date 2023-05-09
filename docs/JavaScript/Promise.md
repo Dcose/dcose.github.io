@@ -1,0 +1,4 @@
+---
+title: 🌀 Promise
+tags: [Promise 🌀]
+---

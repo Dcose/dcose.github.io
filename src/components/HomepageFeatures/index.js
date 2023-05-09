@@ -10,7 +10,7 @@ const FeatureList = [
 			<>
 				Give me a star at here
 				<a target="_blank" rel=" " href="https://github.com/Dcose">
-					GitHub
+					&nbsp;GitHub
 				</a>
 			</>
 		),

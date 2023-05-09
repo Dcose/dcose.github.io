@@ -59,13 +59,13 @@
 }
 
 :root {
-	--ifm-color-primary: #827397;
-	--ifm-color-primary-dark: #4d4c7d;
-	--ifm-color-primary-darker: #4d4c7d;
-	--ifm-color-primary-darkest: #363062;
-	--ifm-color-primary-light: #e9d5da;
-	--ifm-color-primary-lighter: #e9d5da;
-	--ifm-color-primary-lightest: #ffe5f1;
+	--ifm-color-primary: #ff8080;
+	--ifm-color-primary-dark: #ff5a5a;
+	--ifm-color-primary-darker: #ff4747;
+	--ifm-color-primary-darkest: #ff0d0d;
+	--ifm-color-primary-light: #ffa6a6;
+	--ifm-color-primary-lighter: #ffb9b9;
+	--ifm-color-primary-lightest: #fff3f3;
 	--ifm-code-font-size: 95%;
 	--ifm-font-family-base: 'nt-dapper', -apple-system, system-ui,
 		BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Ubuntu, Arial,
@@ -73,7 +73,7 @@
 	--ifm-font-family-monospace: 'jetbrains-mono', monospace;
 	--ifm-heading-font-weight: 900;
 	--ifm-navbar-item-padding-horizontal: 20px;
-	--ifm-navbar-height: 70px;
+	--ifm-navbar-height: 80px;
 	--ifm-link-decoration: none;
 	--ifm-link-hover-decoration: none;
 }

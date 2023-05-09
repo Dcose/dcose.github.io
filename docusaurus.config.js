@@ -79,33 +79,19 @@ const config = {
 					// 	position: 'left',
 					// 	label: 'Tutorial',
 					// },
-					// { to: '/blog', label: 'Blog', position: 'left' },
-					// {
-					// 	href: 'https://github.com/facebook/docusaurus',
-					// 	label: 'GitHub',
-					// 	position: 'right',
-					// },
 					{
 						type: 'search',
 						position: 'right',
 					},
 					{
-						type: 'doc',
-						docId: 'HTML',
-						position: 'right',
+						to: 'docs/HTML',
 						label: '正文',
+						position: 'right',
 					},
 					{
-						type: 'doc',
-						docId: '📕 JavaScript/👻 this',
-						position: 'right',
+						to: 'docs/JavaScript/this',
 						label: 'JS',
-					},
-					{
-						type: 'doc',
-						docId: '💯 LeetCode/Two Sum',
 						position: 'right',
-						label: 'LC',
 					},
 					{
 						href: 'https://github.com/Dcose',
