@@ -89,7 +89,7 @@ const config = {
 						position: 'right',
 					},
 					{
-						to: 'docs/JavaScript/this',
+						to: 'docs/JavaScript/base',
 						label: 'JS',
 						position: 'right',
 					},
