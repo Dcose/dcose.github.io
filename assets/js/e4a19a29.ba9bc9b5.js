@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdcose=self.webpackChunkdcose||[]).push([[616],{2500:s=>{s.exports=JSON.parse('{"label":"this \ud83d\udc7b","permalink":"/docs/tags/this-\ud83d\udc7b","allTagsPath":"/docs/tags","count":1,"items":[{"id":"JavaScript/this","title":"\ud83d\udc7b this","description":"\u7406\u89e3 this \u6307\u5411","permalink":"/docs/JavaScript/this"}]}')}}]);

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdcose=self.webpackChunkdcose||[]).push([[67],{2900:s=>{s.exports=JSON.parse('{"label":"Promise \ud83c\udf00","permalink":"/docs/tags/promise-\ud83c\udf00","allTagsPath":"/docs/tags","count":1,"items":[{"id":"JavaScript/Promise","title":"\ud83c\udf00 Promise","description":"","permalink":"/docs/JavaScript/Promise"}]}')}}]);

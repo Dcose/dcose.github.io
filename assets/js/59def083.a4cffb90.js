@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdcose=self.webpackChunkdcose||[]).push([[132],{410:s=>{s.exports=JSON.parse('{"label":"base \ud83d\udcd5","permalink":"/docs/tags/base-\ud83d\udcd5","allTagsPath":"/docs/tags","count":1,"items":[{"id":"JavaScript/base","title":"\ud83d\udcd5 base","description":"async\u3001defer","permalink":"/docs/JavaScript/base"}]}')}}]);
