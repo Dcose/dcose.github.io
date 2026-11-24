@@ -1,10 +1,22 @@
 ---
-const greetings = ['未来始于当下', 'Hello, world', '你好，世界', 'こんにちは世界', '안녕하세요, 세상', 'Hola, mundo', 'Bonjour le monde', 'Hallo Welt', 'Привет, мир', 'नमस्ते दुनिया', 'مرحبا بالعالم'];
+const greetings = ['Hello, world', '你好，世界', 'こんにちは世界', '안녕하세요, 세상', 'Hola, mundo', 'Bonjour le monde', 'Hallo Welt', 'Привет, мир', 'नमस्ते दुनिया', 'مرحبا بالعالم'];
 ---
 <section class="opening" data-greetings={JSON.stringify(greetings)}>
   <h1>给未来看不懂的自己</h1>
-  <p>未来始于当下</p>
+  <p data-greeting></p>
 </section>
+<script is:inline>
+  (() => {
+    const opening = document.querySelector('.opening');
+    const subtitle = opening?.querySelector('[data-greeting]');
+    if (!opening || !subtitle) return;
+
+    const greetings = JSON.parse(opening.dataset.greetings ?? '[]');
+    if (!Array.isArray(greetings) || greetings.length === 0) return;
+    subtitle.textContent = greetings[Math.floor(Math.random() * greetings.length)];
+    subtitle.dataset.greetingReady = '1';
+  })();
+</script>
 <script>
   document.addEventListener('astro:page-load', () => {
     const opening = document.querySelector<HTMLElement>('.opening');
@@ -14,8 +26,9 @@ const greetings = ['未来始于当下', 'Hello, world', '你好，世界', 'こ
     const greetings: string[] = JSON.parse(opening.dataset.greetings ?? '[]');
     const subtitle = opening.querySelector('p');
     const title = opening.querySelector('h1');
-    if (subtitle && greetings.length > 0) {
+    if (subtitle && greetings.length > 0 && subtitle.dataset.greetingReady !== '1') {
       subtitle.textContent = greetings[Math.floor(Math.random() * greetings.length)];
+      subtitle.dataset.greetingReady = '1';
     }
     if (title && subtitle && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const observer = new IntersectionObserver(entries => {
