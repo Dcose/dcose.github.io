@@ -6,3 +6,4 @@ dist/
 .playwright-cli/
 .code-review-graph/
 output/
+drafts/

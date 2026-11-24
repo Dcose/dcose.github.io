@@ -18,7 +18,28 @@ pnpm run dev
 pnpm run check     # 类型与 Astro 检查
 pnpm run build     # 构建到 dist/
 pnpm run preview   # 预览构建结果
+pnpm run convert -- ./note.md --dry-run  # 预览 Markdown 转换结果
 ```
+
+### 转换文章
+
+`scripts/convert.mjs` 用于把外部 Markdown 转成站点文章目录。默认日期取输入文件的最后修改日期；标题、标签和简单 frontmatter 会被转换，正文中的相对路径图片会复制到文章的 `images/` 目录。
+
+```bash
+# 预览单篇文章，不写入文件
+pnpm run convert -- ./note.md --dry-run
+
+# 指定稳定的 URL slug、标签和发布日期
+pnpm run convert -- ./note.md \
+  --slug prompt-engineering \
+  --tags 提示词,写作 \
+  --date 2026-11-24
+
+# 批量转换 drafts/ 下的 Markdown 文件
+pnpm run convert
+```
+
+`--slug` 只能用于单个输入文件，只允许文字、数字和短横线。中文标题默认会保留为中文 slug；如果需要更短或更稳定的 URL，可以显式指定 `--slug`。`drafts/` 是本地草稿目录，已被 Git 忽略，不会进入发布内容。
 
 ## 编写文章
 
