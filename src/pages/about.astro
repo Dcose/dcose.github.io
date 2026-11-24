@@ -1,0 +1,5 @@
+---
+import Base from '../layouts/Base.astro';
+import { profile } from '../site';
+---
+<Base title="关于"><article class="reader"><a class="back" href="/">← 文章目录</a><header class="articlehead"><small>COLOPHON / KYANITE</small><h1>关于 {profile.name}</h1></header><div class="prose"><p>{profile.bio}</p><p>Kyanite 是一份持续更新的个人手记。文章以 Markdown 写成，按日期和标签归档。</p>{profile.github && <p><a href={profile.github}>GitHub ↗</a></p>}</div></article></Base>

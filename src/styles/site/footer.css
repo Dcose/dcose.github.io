@@ -1,0 +1,11 @@
+/* Minimal Footer */
+.site-credit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 0 56px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+.site-credit a:hover { color: var(--ink); }

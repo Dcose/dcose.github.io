@@ -1,0 +1,508 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { postSummary } from '../../lib/catalog';
+import { collectPostReferences, type PostReference } from '../../lib/post-references';
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const outgoing = collectPostReferences(posts, import.meta.env.SITE);
+  return posts.map(post => ({ params: {slug: post.id}, props: {post, references: outgoing.get(post.id) ?? []} }));
+}
+interface Props { post: CollectionEntry<'posts'>; references: PostReference[] }
+const {post, references} = Astro.props;
+const {Content, headings} = await render(post);
+const sections = headings.filter(heading => heading.depth === 2);
+const date = post.data.date.toISOString().slice(0,10);
+---
+<Base title={post.data.title} description={postSummary(post.body ?? '', post.data.summary)}><div class="reader-layout">
+  {sections.length > 0 && <details class="toc" id="tocBox" open aria-label="目录">
+    <summary class="toc-summary"><span class="toc-title">目录</span><span class="toc-meta"><span>{sections.length} 节</span><span class="toc-chevron">▾</span></span></summary>
+    <ol class="toc-list" id="tocList">
+      {sections.map(heading => <li><a href={`#${heading.slug}`}>{heading.text}</a></li>)}
+    </ol>
+  </details>}
+  <article class="reader">
+    <a class="back" href="/">← 文章目录</a><header class="articlehead"><time datetime={date}>{date}</time><h1>{post.data.title}</h1><div class="pills">{post.data.tags.map(tag => <a href={`/?tag=${encodeURIComponent(tag)}`}># {tag}</a>)}</div></header>
+    <div class="prose"><Content/></div>
+    {references.length > 0 && <nav class="post-references" aria-label="本文引用" id="post-references">
+      <h2>本文引用</h2>
+      <ul>{references.map(reference => <li><a href={`/posts/${reference.id}/`}>{reference.title}</a></li>)}</ul>
+    </nav>}
+  </article>
+</div>
+<script>
+  document.addEventListener('astro:page-load', () => {
+  const prose = document.querySelector<HTMLElement>('.prose');
+  if (prose && !prose.dataset.enhanced) {
+    prose.dataset.enhanced = '1';
+    const pageController = new AbortController();
+    document.addEventListener('astro:before-swap', () => pageController.abort(), { once: true });
+    const cards = Array.from(prose.querySelectorAll('blockquote')).filter((bq) => {
+      const first = bq.firstElementChild;
+      const ol = bq.querySelector(':scope > ol');
+      return first && first.tagName === 'P' && first.children.length === 1 && first.firstElementChild?.tagName === 'STRONG' && ol;
+    });
+
+    const parseCard = (bq: Element) => {
+      const rawTitle = bq.querySelector(':scope > p:first-child > strong')?.textContent?.trim() ?? '';
+      const parts = rawTitle.split(/[｜|]/).map(s => s.trim());
+      const steps = Array.from(bq.querySelectorAll(':scope > ol > li')).map(li => li.textContent?.trim() ?? '');
+      return { name: parts[0] || rawTitle, pill: parts[1] || '', steps };
+    };
+
+    const wrapLine = (str: string, max = 18) => {
+      if (str.length <= max) return [str, ''];
+      const punct = /[，：、。]/;
+      let splitAt = -1;
+      for (let idx = Math.min(max, str.length - 4); idx >= 8; idx--) {
+        if (punct.test(str[idx])) { splitAt = idx + 1; break; }
+      }
+      if (splitAt === -1) splitAt = max;
+      const second = str.slice(splitAt).trim();
+      return [str.slice(0, splitAt).trim(), second.length > max ? second.slice(0, max - 1) + '…' : second];
+    };
+
+    for (let i = 0; i < cards.length - 1; i++) {
+      const b1 = cards[i];
+      const b2 = cards[i + 1];
+      if (b1.nextElementSibling !== b2) continue;
+
+      const d1 = parseCard(b1);
+      const d2 = parseCard(b2);
+      const prevH2 = b1.previousElementSibling?.tagName === 'H2'
+        ? b1.previousElementSibling.textContent?.replace(/^\d+\.\s*/, '').trim()
+        : '对比流程';
+
+      const wrap = document.createElement('section');
+      wrap.className = 'flow-diagram';
+      wrap.innerHTML = `
+        <div class="flow-diagram-head">
+          <span class="flow-timer">0.0s / 3.0s</span>
+          <span class="flow-diagram-ctrl">
+            <button type="button" class="flow-reset" hidden>全部</button>
+            <button type="button" class="flow-replay is-active">↻ 重播</button>
+          </span>
+        </div>
+        <svg viewBox="0 0 680 256" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="kyanite-caret" viewBox="0 0 10 10" refX="7.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto">
+              <path d="M 3 1.2 L 7.5 5 L 3 8.8" fill="none" stroke="var(--ink-2)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </marker>
+            <marker id="kyanite-caret-accent" viewBox="0 0 10 10" refX="7.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto">
+              <path d="M 3 1.2 L 7.5 5 L 3 8.8" fill="none" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </marker>
+          </defs>
+          <g class="flow-root">
+            <rect class="node-step" x="234" y="10" width="212" height="52" rx="26"/>
+            <text class="t-l1" x="340" y="36" text-anchor="middle" dominant-baseline="central">${prevH2}</text>
+          </g>
+          <g class="flow-branch" data-branch="0">
+            <path class="edge-seg" d="M 296 70 L 296 84 Q 296 96 284 96 L 234 96"/>
+            <rect class="edge-pill" x="118" y="86" width="108" height="20" rx="10"/>
+            <text class="t-l2" x="172" y="96" text-anchor="middle" dominant-baseline="central">${d1.pill || 'Branch 1'}</text>
+            <line class="edge-arrow" x1="172" y1="112" x2="172" y2="134"/>
+            <rect class="node-focal" x="24" y="142" width="296" height="96" rx="48"/>
+            <text class="t-l1" x="172" y="168" text-anchor="middle" dominant-baseline="central">${d1.name}</text>
+            <text class="t-l4 b0-l1" x="172" y="194" text-anchor="middle" dominant-baseline="central"></text>
+            <text class="t-l4 b0-l2" x="172" y="214" text-anchor="middle" dominant-baseline="central"></text>
+          </g>
+          <g class="flow-branch" data-branch="1">
+            <path class="edge-seg" d="M 384 70 L 384 84 Q 384 96 396 96 L 446 96"/>
+            <rect class="edge-pill" x="454" y="86" width="108" height="20" rx="10"/>
+            <text class="t-l2" x="508" y="96" text-anchor="middle" dominant-baseline="central">${d2.pill || 'Branch 2'}</text>
+            <line class="edge-arrow" x1="508" y1="112" x2="508" y2="134"/>
+            <rect class="node-store" x="360" y="142" width="296" height="96" rx="48"/>
+            <text class="t-l1" x="508" y="168" text-anchor="middle" dominant-baseline="central">${d2.name}</text>
+            <text class="t-l4 b1-l1" x="508" y="194" text-anchor="middle" dominant-baseline="central"></text>
+            <text class="t-l4 b1-l2" x="508" y="214" text-anchor="middle" dominant-baseline="central"></text>
+          </g>
+        </svg>
+        <div class="flow-steps-grid">
+          <div class="flow-step-col" data-col="0">
+            ${d1.steps.map((s, idx) => `<button type="button" class="flow-step-btn" data-b="0" data-s="${idx}"><span class="flow-step-idx">${idx + 1}.</span><span>${s}</span></button>`).join('')}
+          </div>
+          <div class="flow-step-col" data-col="1">
+            ${d2.steps.map((s, idx) => `<button type="button" class="flow-step-btn" data-b="1" data-s="${idx}"><span class="flow-step-idx">${idx + 1}.</span><span>${s}</span></button>`).join('')}
+          </div>
+        </div>
+      `;
+
+      b1.replaceWith(wrap);
+      b2.remove();
+
+      const timerEl = wrap.querySelector('.flow-timer')!;
+      const replayBtn = wrap.querySelector('.flow-replay')!;
+      const resetBtn = wrap.querySelector<HTMLButtonElement>('.flow-reset')!;
+      const b0El = wrap.querySelector('[data-branch="0"]')!;
+      const b1El = wrap.querySelector('[data-branch="1"]')!;
+      const b0L1 = wrap.querySelector('.b0-l1')!;
+      const b0L2 = wrap.querySelector('.b0-l2')!;
+      const b1L1 = wrap.querySelector('.b1-l1')!;
+      const b1L2 = wrap.querySelector('.b1-l2')!;
+      const stepBtns = Array.from(wrap.querySelectorAll<HTMLButtonElement>('.flow-step-btn'));
+
+      const TOTAL = 3.0;
+      const t1 = d1.steps.map((_, idx) => Number(((idx + 0.5) / d1.steps.length * 2.7).toFixed(2)));
+      const t2 = d2.steps.map((_, idx) => idx === d2.steps.length - 1 ? 2.7 : 0.4);
+      let rafId = 0;
+
+      const setLines = (l1El: Element, l2El: Element, text: string) => {
+        const [a, b] = wrapLine(text, 19);
+        l1El.textContent = a;
+        l2El.textContent = b;
+      };
+
+      const renderAt = (t: number, focusBranch = -1) => {
+        const c = Math.min(TOTAL, Math.max(0, t));
+        timerEl.textContent = `${c.toFixed(1)}s / ${TOTAL.toFixed(1)}s`;
+        resetBtn.hidden = focusBranch === -1;
+
+        let s0 = -1;
+        t1.forEach((m, idx) => { if (c >= m) s0 = idx; });
+        let s1 = -1;
+        t2.forEach((m, idx) => { if (c >= m) s1 = idx; });
+
+        setLines(b0L1, b0L2, s0 >= 0 ? d1.steps[s0] : '等待第一段返回…');
+        setLines(b1L1, b1L2, s1 >= 0 ? d2.steps[s1] : '等待生成…');
+
+        if (focusBranch === 0) {
+          b0El.classList.remove('dim');
+          b0El.classList.add('is-lit');
+          b1El.classList.add('dim');
+          b1El.classList.remove('is-lit');
+        } else if (focusBranch === 1) {
+          b0El.classList.add('dim');
+          b0El.classList.remove('is-lit');
+          b1El.classList.remove('dim');
+          b1El.classList.add('is-lit');
+        } else {
+          b0El.classList.toggle('dim', s0 < 0);
+          b0El.classList.toggle('is-lit', s0 >= 0);
+          b1El.classList.toggle('dim', s1 < d2.steps.length - 1);
+          b1El.classList.toggle('is-lit', s1 >= d2.steps.length - 1);
+        }
+
+        stepBtns.forEach((btn) => {
+          const b = Number(btn.dataset.b);
+          const s = Number(btn.dataset.s);
+          const activeIdx = b === 0 ? s0 : s1;
+          const isBranchDim = focusBranch !== -1 && focusBranch !== b;
+          btn.classList.toggle('is-active', !isBranchDim && s === activeIdx);
+          btn.classList.toggle('is-dim', isBranchDim || (activeIdx >= 0 && s !== activeIdx));
+        });
+      };
+
+      const play = () => {
+        cancelAnimationFrame(rafId);
+        const start = performance.now();
+        const tick = (now: number) => {
+          const elapsed = (now - start) / 1000;
+          renderAt(elapsed, -1);
+          if (elapsed < TOTAL) rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
+      };
+
+      replayBtn.addEventListener('click', play);
+      resetBtn.addEventListener('click', () => {
+        cancelAnimationFrame(rafId);
+        renderAt(TOTAL, -1);
+      });
+
+      stepBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          cancelAnimationFrame(rafId);
+          const b = Number(btn.dataset.b);
+          const s = Number(btn.dataset.s);
+          const targetT = b === 0 ? t1[s] : t2[s];
+          renderAt(targetT, b);
+        });
+      });
+
+      [b0El, b1El].forEach((el, idx) => {
+        el.addEventListener('click', () => {
+          cancelAnimationFrame(rafId);
+          const targetT = idx === 0 ? t1[t1.length - 1] : t2[t2.length - 1];
+          renderAt(targetT, idx);
+        });
+      });
+
+      play();
+      i++;
+    }
+
+    // 代码块与日志块渐进增强
+    const ICON_COPY = `<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+    const ICON_CHECK = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const LANG_NAMES: Record<string, string> = {
+      json: 'json',
+      ts: 'TypeScript',
+      typescript: 'TypeScript',
+      js: 'JavaScript',
+      javascript: 'JavaScript',
+      py: 'Python',
+      python: 'Python',
+      bash: 'Bash',
+      sh: 'Shell',
+    };
+
+    const bindCopyBtn = (btn: HTMLButtonElement, getText: () => string) => {
+      const status = document.createElement('div');
+      status.className = 'copy-status';
+      status.setAttribute('role', 'status');
+      btn.closest('.code-block, .log-wrap')?.append(status);
+      let resetTimer: number | undefined;
+      let writing = false;
+      btn.innerHTML = ICON_COPY;
+      btn.addEventListener('click', async () => {
+        if (writing) return;
+        writing = true;
+        window.clearTimeout(resetTimer);
+        btn.innerHTML = ICON_COPY;
+        btn.classList.remove('is-copied');
+        status.textContent = '';
+        status.classList.remove('copy-error');
+        try {
+          await navigator.clipboard.writeText(getText());
+          btn.innerHTML = ICON_CHECK;
+          btn.classList.add('is-copied');
+          status.textContent = '已复制';
+          resetTimer = window.setTimeout(() => {
+            btn.innerHTML = ICON_COPY;
+            btn.classList.remove('is-copied');
+            status.textContent = '';
+          }, 1500);
+        } catch {
+          status.classList.add('copy-error');
+          status.textContent = '复制失败，请手动选择并复制。';
+        } finally {
+          writing = false;
+        }
+      });
+    };
+
+    Array.from(prose.querySelectorAll<HTMLPreElement>('pre.astro-code')).forEach((pre) => {
+      const lang = (pre.dataset.language || 'text').toLowerCase();
+      const rawText = pre.innerText;
+
+      if (lang === 'text' || lang === 'log' || lang === 'plaintext') {
+        const lines = rawText.split('\n').map(l => l.trimEnd()).filter(Boolean);
+        const wrap = document.createElement('div');
+        wrap.className = 'log-wrap';
+        wrap.innerHTML = `
+          <div class="log-float-head">
+            <span>${lines.some(l => l.startsWith('data:')) ? 'sse · stream log' : lang}</span>
+            <button type="button" class="code-icon-btn" aria-label="复制日志" title="复制日志"></button>
+          </div>
+          <div class="log-list"></div>
+        `;
+        const list = wrap.querySelector('.log-list')!;
+        lines.forEach((line, idx) => {
+          const row = document.createElement('div');
+          row.className = 'log-row';
+          const num = String(idx + 1).padStart(2, '0');
+          const contentEl = document.createElement('span');
+          if (line.startsWith('data:')) {
+            const rest = line.slice(5);
+            const prefix = document.createElement('span');
+            prefix.className = 'log-prefix';
+            prefix.textContent = 'data:';
+            contentEl.appendChild(prefix);
+            if (rest.trim() === '[DONE]') {
+              const done = document.createElement('span');
+              done.className = 'log-done';
+              done.textContent = ' [DONE]';
+              contentEl.appendChild(done);
+            } else {
+              contentEl.append(rest);
+            }
+          } else {
+            contentEl.textContent = line;
+          }
+          row.innerHTML = `<span class="log-idx">${num}</span>`;
+          row.appendChild(contentEl);
+          list.appendChild(row);
+        });
+        bindCopyBtn(wrap.querySelector<HTMLButtonElement>('.code-icon-btn')!, () => rawText);
+        pre.replaceWith(wrap);
+      } else {
+        const wrap = document.createElement('div');
+        wrap.className = 'code-block';
+        const displayLang = LANG_NAMES[lang] || lang;
+        wrap.innerHTML = `
+          <div class="code-head">
+            <span class="lang-label">${displayLang}</span>
+            <button type="button" class="code-icon-btn" aria-label="复制代码" title="复制代码"></button>
+          </div>
+        `;
+        pre.replaceWith(wrap);
+        wrap.appendChild(pre);
+        bindCopyBtn(wrap.querySelector<HTMLButtonElement>('.code-icon-btn')!, () => pre.innerText);
+      }
+    });
+
+    // 统一将 [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION], [!SIDENOTE] 渲染为左竖线 Tufte 旁注
+    const SN_LABELS: Record<string, string> = {
+      note: 'Note',
+      tip: 'Tip',
+      important: 'Important',
+      warning: 'Warning',
+      caution: 'Caution',
+    };
+    let snCount = 0;
+    Array.from(prose.querySelectorAll('blockquote')).forEach((bq) => {
+      const firstP = bq.querySelector(':scope > p:first-child');
+      if (!firstP) return;
+      const firstText = firstP.innerHTML.trim();
+      const match = firstText.match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION|SIDENOTE)(?::(note|tip|important|warning|caution))?\](?:[ \t]+([^\n<]+))?(?:\n|<br\s*\/?>)?([\s\S]*)$/i);
+      if (!match) return;
+
+      snCount++;
+      const snId = String(snCount);
+      const rawTag = match[1].toLowerCase();
+      const type = rawTag === 'sidenote' ? (match[2] || 'note').toLowerCase() : rawTag;
+      const title = match[3]?.trim() || SN_LABELS[type] || 'Note';
+      const restHtml = match[4]?.trim() ?? '';
+
+      const target = bq.previousElementSibling;
+      if (target) {
+        target.classList.add('sn-target');
+        target.setAttribute('data-sn', snId);
+        if (target.tagName === 'P') {
+          const sup = document.createElement('sup');
+          sup.className = 'sn-ref';
+          sup.setAttribute('data-sn', snId);
+          sup.textContent = `§${snId}`;
+          target.appendChild(sup);
+        }
+      }
+
+      const wrap = document.createElement('aside');
+      wrap.className = 'sidenote';
+      wrap.dataset.type = type;
+      wrap.dataset.sn = snId;
+      wrap.innerHTML = `
+        <div class="sidenote-head">
+          <span>${title}</span>
+          <span class="sidenote-ptr">§${snId}</span>
+        </div>
+      `;
+
+      const body = document.createElement('div');
+      body.className = 'sidenote-body';
+      if (restHtml) {
+        const p = document.createElement('p');
+        p.innerHTML = restHtml;
+        body.appendChild(p);
+      }
+      Array.from(bq.children).slice(1).forEach((child) => body.appendChild(child));
+      wrap.appendChild(body);
+
+      if (target) {
+        target.before(wrap);
+        bq.remove();
+      } else {
+        bq.replaceWith(wrap);
+      }
+    });
+
+    if (snCount > 0) {
+      prose.querySelectorAll<HTMLElement>('.sidenote[data-sn]').forEach((el) => {
+        const id = el.dataset.sn!;
+        el.addEventListener('mouseenter', () => {
+          prose.querySelectorAll(`[data-sn="${id}"]`).forEach((t) => t.classList.add('is-lit'));
+        });
+        el.addEventListener('mouseleave', () => {
+          prose.querySelectorAll(`[data-sn="${id}"]`).forEach((t) => t.classList.remove('is-lit'));
+        });
+      });
+    }
+
+    // ==高亮== 语法解析（跳过代码块与行内代码）
+    const walker = document.createTreeWalker(prose, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent || parent.closest('code, pre, a, script, style, mark')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return /==[^=\n]+==/.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+      },
+    });
+    const markNodes: Text[] = [];
+    while (walker.nextNode()) markNodes.push(walker.currentNode as Text);
+    markNodes.forEach((node) => {
+      const text = node.nodeValue || '';
+      const frag = document.createDocumentFragment();
+      let last = 0;
+      text.replace(/==([^=\n]+)==/g, (full, inner, offset) => {
+        if (offset > last) frag.append(text.slice(last, offset));
+        const mark = document.createElement('mark');
+        mark.textContent = inner;
+        frag.append(mark);
+        last = offset + full.length;
+        return full;
+      });
+      if (last < text.length) frag.append(text.slice(last));
+      node.replaceWith(frag);
+    });
+
+    // 目录 Scrollspy（基于视口顶部阈值 + 触底兜底 + 点击即时响应）
+    const tocBox = document.getElementById('tocBox') as HTMLDetailsElement | null;
+    const tocList = document.getElementById('tocList');
+    if (tocBox && tocList) {
+      if (matchMedia('(max-width: 1159px)').matches) tocBox.open = false;
+      const tocItems = Array.from(tocList.querySelectorAll('li'));
+      const h2s = Array.from(prose.querySelectorAll<HTMLElement>('h2[id]'));
+      if (tocItems.length > 0 && h2s.length > 0) {
+        tocList.classList.add('has-active');
+        let lockUntil = 0;
+
+        const setActiveId = (id: string) => {
+          tocItems.forEach((li) => {
+            const href = li.querySelector('a')?.getAttribute('href');
+            li.classList.toggle('is-active', href === `#${id}`);
+          });
+        };
+
+        const updateActive = () => {
+          if (performance.now() < lockUntil) return;
+          const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+          if (atBottom) {
+            setActiveId(h2s[h2s.length - 1].id);
+            return;
+          }
+          let current = h2s[0].id;
+          for (const h of h2s) {
+            if (h.getBoundingClientRect().top <= 130) current = h.id;
+            else break;
+          }
+          setActiveId(current);
+        };
+
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(() => {
+            updateActive();
+            ticking = false;
+          });
+        }, { passive: true, signal: pageController.signal });
+
+        tocItems.forEach((li) => {
+          li.querySelector('a')?.addEventListener('click', () => {
+            const href = li.querySelector('a')?.getAttribute('href');
+            if (href?.startsWith('#')) {
+              lockUntil = performance.now() + 650;
+              setActiveId(href.slice(1));
+            }
+          });
+        });
+
+        updateActive();
+      }
+    }
+  }
+  });
+</script>
+</Base>

@@ -1,0 +1,148 @@
+/* 普通纯引用 & 5 类杂志风格 Callout */
+.prose > blockquote:not(:has(> p:first-child > strong:only-child):has(> ol)) {
+  margin: 1.4em 0;
+  padding: 4px 0 4px 16px;
+  border-left: 1.5px solid var(--line);
+  color: var(--ink-2);
+  font-family: var(--serif);
+  font-size: 14.5px;
+}
+.prose .callout {
+  --tone: var(--c-note);
+  --c-note: light-dark(#3b4c6b, #93c5fd);
+  --c-tip: light-dark(#059669, #34d399);
+  --c-imp: light-dark(#d9483b, #a5b4fc);
+  --c-warn: light-dark(#ea580c, #ff7a33);
+  --c-caution: light-dark(#dc2626, #f87171);
+  margin: 1.75em 0;
+  padding: 15px 4px;
+  border-top: 1px solid var(--tone);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.prose .callout[data-type="note"] { --tone: var(--c-note); }
+.prose .callout[data-type="tip"] { --tone: var(--c-tip); }
+.prose .callout[data-type="important"] { --tone: var(--c-imp); }
+.prose .callout[data-type="warning"] { --tone: var(--c-warn); }
+.prose .callout[data-type="caution"] { --tone: var(--c-caution); }
+.prose .callout-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--tone);
+}
+.prose .callout-head::before {
+  content: "§";
+  opacity: 0.75;
+}
+.prose .callout-body {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.82;
+  color: var(--ink);
+}
+.prose .callout-body > :first-child { margin-top: 0; }
+.prose .callout-body > :last-child { margin-bottom: 0; }
+
+/* 左竖线 Tufte 旁注 + 指向标记 ([!SIDENOTE]) */
+.prose .sn-target {
+  border-radius: 6px;
+  transition: background-color .2s ease, border-color .2s ease;
+}
+.prose .sn-target.is-lit {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.prose table.sn-target.is-lit {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+.prose .sn-ref {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  margin-left: 3px;
+  vertical-align: super;
+  cursor: pointer;
+  transition: color .15s ease;
+}
+.prose .sn-ref.is-lit { color: var(--accent); font-weight: 600; }
+.prose .sidenote {
+  --tone: var(--accent);
+  position: relative;
+  margin: 1.4em 0;
+  padding: 6px 0 6px 14px;
+  border-left: 1.5px solid var(--tone);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .2s ease;
+}
+.prose .sidenote[data-type="tip"] { --tone: light-dark(#059669, #34d399); }
+.prose .sidenote[data-type="important"] { --tone: var(--accent); }
+.prose .sidenote[data-type="warning"] { --tone: light-dark(#ea580c, #ff7a33); }
+.prose .sidenote[data-type="caution"] { --tone: light-dark(#dc2626, #f87171); }
+.prose .sidenote-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tone);
+}
+.prose .sidenote-ptr {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 11px var(--mono);
+  color: var(--muted);
+  transition: color .2s ease, transform .2s ease;
+}
+.prose .sidenote-body {
+  font-family: var(--serif);
+  font-size: 13.5px;
+  line-height: 1.72;
+  color: var(--ink-2);
+  transition: color .2s ease;
+}
+.prose .sidenote-body > :first-child { margin-top: 0; }
+.prose .sidenote-body > :last-child { margin-bottom: 0; }
+@media (min-width: 1180px) {
+  .prose .sidenote {
+    float: left;
+    clear: left;
+    width: 196px;
+    margin: 4px 0 14px -226px;
+    padding: 4px 0 4px 14px;
+  }
+  .prose .sidenote::after {
+    content: "";
+    position: absolute;
+    top: 13px;
+    right: -22px;
+    width: 18px;
+    height: 8px;
+    background-color: var(--tone);
+    opacity: 0.55;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 8'%3E%3Cline x1='0' y1='4' x2='15' y2='4' stroke='black' stroke-width='1.3' stroke-dasharray='1.5 2.5'/%3E%3Cpath d='M12 1 L16 4 L12 7' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 8'%3E%3Cline x1='0' y1='4' x2='15' y2='4' stroke='black' stroke-width='1.3' stroke-dasharray='1.5 2.5'/%3E%3Cpath d='M12 1 L16 4 L12 7' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: opacity .2s ease, transform .2s ease, background-color .2s ease;
+  }
+}
+.prose .sidenote.is-lit { border-left-color: var(--accent); }
+.prose .sidenote.is-lit .sidenote-head,
+.prose .sidenote.is-lit .sidenote-ptr { color: var(--accent); }
+.prose .sidenote.is-lit .sidenote-ptr { transform: translateX(2px); }
+.prose .sidenote.is-lit .sidenote-body { color: var(--ink); }
+@media (min-width: 1180px) {
+  .prose .sidenote.is-lit::after {
+    opacity: 1;
+    background-color: var(--accent);
+    transform: translateX(2px);
+  }
+}

@@ -1,0 +1,51 @@
+---
+import { getCollection } from 'astro:content';
+import { ClientRouter } from 'astro:transitions';
+import CommandPalette from '../components/CommandPalette';
+import Masthead from '../components/Masthead';
+import SplashCursor from '../components/SplashCursor';
+import { postSummary } from '../lib/catalog';
+import { getTagCounts } from '../lib/home';
+import '../styles/index.css';
+
+interface Props { title: string; description?: string; home?: boolean }
+const { title, description = 'Kyanite 个人笔记', home = false } = Astro.props;
+
+const entries = (await getCollection('posts')).sort((first, second) => second.data.date.valueOf() - first.data.date.valueOf());
+const cmdPosts = entries.map(entry => ({
+  id: entry.id,
+  title: entry.data.title,
+  summary: postSummary(entry.body ?? '', entry.data.summary),
+  date: entry.data.date.toISOString().slice(0, 10).replaceAll('-', '.'),
+  tags: entry.data.tags,
+}));
+const cmdTags = Object.entries(getTagCounts(cmdPosts))
+  .sort((first, second) => second[1] - first[1])
+  .map(([tag, count]) => ({ tag, count }));
+---
+<!doctype html>
+<html lang="zh-CN"><head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{home ? 'Kyanite · 文章' : `${title} · Kyanite`}</title><meta name="description" content={description}/>
+  <link rel="icon" href="/favicon_black.ico"/>
+  <ClientRouter />
+  <script is:inline>
+    function syncKyanitePrefs() {
+      try {
+        const saved = localStorage.getItem('kyanite-theme');
+        if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved;
+        const splash = localStorage.getItem('kyanite-splash');
+        if (splash === 'on' || splash === 'off') document.documentElement.dataset.splash = splash;
+      } catch {}
+    }
+    syncKyanitePrefs();
+    document.addEventListener('astro:after-swap', syncKyanitePrefs);
+  </script>
+</head><body>
+  <a class="skip" href="#main">跳到正文</a>
+  <Masthead client:load transition:persist="masthead"/>
+  <CommandPalette posts={cmdPosts} tags={cmdTags} client:load transition:persist="cmd-palette"/>
+  <SplashCursor client:media="(prefers-reduced-motion: no-preference)" transition:persist="splash-cursor"/>
+  <main id="main" transition:name="main-stage" transition:animate="none"><slot/></main>
+  <footer class="wrap site-credit"><span>Made with ❤️ by Dcose Team</span><a href="/about/">关于 Kyanite</a></footer>
+</body></html>

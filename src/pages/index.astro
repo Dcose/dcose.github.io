@@ -1,0 +1,205 @@
+---
+import { getCollection } from 'astro:content';
+import KnowledgeGraph from '../components/KnowledgeGraph';
+import Opening from '../components/Opening.astro';
+import Base from '../layouts/Base.astro';
+import { postSummary } from '../lib/catalog';
+import { buildGraphData, getTagCounts } from '../lib/home';
+import { collectPostReferences } from '../lib/post-references';
+
+const entries = (await getCollection('posts')).sort((first, second) => second.data.date.valueOf() - first.data.date.valueOf());
+const posts = entries.map(entry => ({
+  id: entry.id,
+  title: entry.data.title,
+  summary: postSummary(entry.body ?? '', entry.data.summary),
+  date: entry.data.date.toISOString().slice(0, 10),
+  tags: entry.data.tags,
+}));
+const tagCounts = getTagCounts(posts);
+const tags = Object.entries(tagCounts).sort((first, second) => second[1] - first[1]);
+const graph = buildGraphData(posts, collectPostReferences(entries, import.meta.env.SITE));
+---
+<Base title="文章" home>
+  <div class="wrap">
+    <Opening />
+
+    <div class="controls">
+      <div class="view-tabs" role="tablist" aria-label="首页视图">
+        <button type="button" class="view-tab active" role="tab" aria-selected="true" data-view="writing">文章</button>
+        <button type="button" class="view-tab" role="tab" aria-selected="false" data-view="tags">标签</button>
+        <button type="button" class="view-tab" role="tab" aria-selected="false" data-view="graph">图谱</button>
+      </div>
+      <div class="control-status">
+        <span id="count-status" aria-live="polite">{posts.length} 篇</span>
+        <span id="active-filter" class="active-filter" hidden>
+          <span id="active-tag-label"></span>
+          <button type="button" id="clear-tag" aria-label="清除标签筛选" title="清除筛选">×</button>
+        </span>
+      </div>
+    </div>
+
+    <section id="writing-view" class="post-list" aria-label="文章列表">
+      {posts.map(post => (
+        <a
+          class="post-row"
+          href={`/posts/${post.id}/`}
+          data-post={JSON.stringify({ title: post.title, summary: post.summary, tags: post.tags })}
+        >
+          <div class="post-head">
+            <h2 class="post-title">{post.title}</h2>
+            <time class="post-date" datetime={post.date}>{post.date.replaceAll('-', '.')}</time>
+          </div>
+          <p class="post-summary">{post.summary}</p>
+        </a>
+      ))}
+      <div id="empty" class="empty-state" hidden>
+        没有找到符合条件的文章。<button id="empty-clear" type="button">查看全部</button>
+      </div>
+    </section>
+
+    <section id="tags-view" class="tags-directory" aria-label="标签索引" data-total-tags={tags.length} hidden>
+      {tags.map(([tag, count]) => (
+        <button type="button" class="tag-dir-item" data-tag={tag}>
+          <span>#{tag}</span><sup>{count}</sup>
+        </button>
+      ))}
+    </section>
+
+    <section
+      id="graph-view"
+      class="graph-wrap"
+      aria-label="知识图谱"
+      data-graph-stats={`${graph.nodes.length} 节点 · ${graph.links.length} 关联`}
+      hidden
+    >
+      <KnowledgeGraph nodes={graph.nodes} links={graph.links} client:visible />
+    </section>
+  </div>
+</Base>
+
+<script>
+  import { matchesPost } from '../lib/catalog';
+
+  document.addEventListener('astro:page-load', () => {
+    const writingView = document.querySelector<HTMLElement>('#writing-view');
+    const tagsView = document.querySelector<HTMLElement>('#tags-view');
+    const graphView = document.querySelector<HTMLElement>('#graph-view');
+    if (!writingView || !tagsView || !graphView) return;
+
+    const controller = new AbortController();
+    const { signal } = controller;
+    document.addEventListener('astro:before-swap', () => controller.abort(), { once: true });
+
+    const tabs = [...document.querySelectorAll<HTMLButtonElement>('.view-tab')];
+    const totalTags = Number(tagsView.dataset.totalTags ?? '0');
+    const graphStats = graphView.dataset.graphStats ?? '';
+    const rows = [...document.querySelectorAll<HTMLElement>('[data-post]')].map(element => ({
+      element,
+      post: JSON.parse(element.dataset.post!),
+    }));
+    const countStatus = document.querySelector<HTMLElement>('#count-status');
+    const activeFilter = document.querySelector<HTMLElement>('#active-filter');
+    const activeTagLabel = document.querySelector<HTMLElement>('#active-tag-label');
+    const clearTagBtn = document.querySelector<HTMLButtonElement>('#clear-tag');
+    const emptyEl = document.querySelector<HTMLElement>('#empty');
+    const emptyClearBtn = document.querySelector<HTMLButtonElement>('#empty-clear');
+
+    let currentView = 'writing';
+    let panelAnimation: Animation | undefined;
+
+    function switchView(view: string) {
+      const prevView = currentView;
+      currentView = view;
+
+      for (const tab of tabs) {
+        const selected = tab.dataset.view === view;
+        tab.classList.toggle('active', selected);
+        tab.setAttribute('aria-selected', String(selected));
+      }
+
+      const getPanel = (name: string) =>
+        name === 'writing' ? writingView : name === 'tags' ? tagsView : graphView;
+      const nextPanel = getPanel(view);
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      panelAnimation?.cancel();
+
+      if (writingView) writingView.hidden = view !== 'writing';
+      if (tagsView) tagsView.hidden = view !== 'tags';
+      if (graphView) graphView.hidden = view !== 'graph';
+      render();
+
+      if (prevView !== view && !reduceMotion && nextPanel) {
+        panelAnimation = nextPanel.animate(
+          [
+            { opacity: .45, filter: 'blur(3px)', transform: 'translateY(4px)' },
+            { opacity: .94, filter: 'blur(.4px)', transform: 'translateY(1px)', offset: .64 },
+            { opacity: 1, filter: 'blur(0px)', transform: 'translateY(0)' },
+          ],
+          { duration: 360, easing: 'cubic-bezier(.32,.44,.26,1)' },
+        );
+      }
+    }
+
+    function setTag(tag: string) {
+      const url = new URL(location.href);
+      if (tag) url.searchParams.set('tag', tag);
+      else url.searchParams.delete('tag');
+      if (location.href !== url.href) history.pushState(null, '', `${url.pathname}${url.search}`);
+      switchView('writing');
+    }
+
+    function render() {
+      const tag = new URL(location.href).searchParams.get('tag') ?? '';
+      let visibleCount = 0;
+      for (const { element, post } of rows) {
+        const show = matchesPost(post, tag, '');
+        element.hidden = !show;
+        if (show) visibleCount++;
+      }
+      if (emptyEl) emptyEl.hidden = visibleCount !== 0;
+
+      if (currentView === 'writing' && tag) {
+        if (countStatus) countStatus.hidden = true;
+        if (activeFilter) activeFilter.hidden = false;
+        if (activeTagLabel) activeTagLabel.textContent = `#${tag}`;
+      } else if (currentView === 'tags') {
+        if (activeFilter) activeFilter.hidden = true;
+        if (countStatus) {
+          countStatus.hidden = false;
+          countStatus.textContent = `共 ${totalTags} 个标签`;
+        }
+      } else if (currentView === 'graph') {
+        if (activeFilter) activeFilter.hidden = true;
+        if (countStatus) {
+          countStatus.hidden = false;
+          countStatus.textContent = graphStats;
+        }
+      } else {
+        if (activeFilter) activeFilter.hidden = true;
+        if (countStatus) {
+          countStatus.hidden = false;
+          countStatus.textContent = `${visibleCount} 篇`;
+        }
+      }
+    }
+
+    for (const tab of tabs) {
+      tab.addEventListener('click', () => switchView(tab.dataset.view ?? 'writing'), { signal });
+    }
+
+    for (const tagBtn of document.querySelectorAll<HTMLButtonElement>('.tag-dir-item')) {
+      tagBtn.addEventListener('click', () => setTag(tagBtn.dataset.tag ?? ''), { signal });
+    }
+
+    clearTagBtn?.addEventListener('click', () => setTag(''), { signal });
+    emptyClearBtn?.addEventListener('click', () => setTag(''), { signal });
+
+    window.addEventListener('kyanite:filter-tag', event => {
+      const tag = (event as CustomEvent<{ tag?: string }>).detail?.tag ?? '';
+      setTag(tag);
+    }, { signal });
+
+    window.addEventListener('popstate', render, { signal });
+    render();
+  });
+</script>

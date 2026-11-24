@@ -1,0 +1,39 @@
+---
+const greetings = ['未来始于当下', 'Hello, world', '你好，世界', 'こんにちは世界', '안녕하세요, 세상', 'Hola, mundo', 'Bonjour le monde', 'Hallo Welt', 'Привет, мир', 'नमस्ते दुनिया', 'مرحبا بالعالم'];
+---
+<section class="opening" data-greetings={JSON.stringify(greetings)}>
+  <h1>给未来看不懂的自己</h1>
+  <p>未来始于当下</p>
+</section>
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const opening = document.querySelector<HTMLElement>('.opening');
+    if (!opening || opening.dataset.init === '1') return;
+    opening.dataset.init = '1';
+
+    const greetings: string[] = JSON.parse(opening.dataset.greetings ?? '[]');
+    const subtitle = opening.querySelector('p');
+    const title = opening.querySelector('h1');
+    if (subtitle && greetings.length > 0) {
+      subtitle.textContent = greetings[Math.floor(Math.random() * greetings.length)];
+    }
+    if (title && subtitle && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const observer = new IntersectionObserver(entries => {
+        if (!entries.some(entry => entry.isIntersecting)) return;
+        observer.disconnect();
+        for (const [element, delay] of [[title, 75], [subtitle, 80]] as const) {
+          const full = element.textContent ?? '';
+          const letters = Array.from(full);
+          element.setAttribute('aria-label', full);
+          let length = 0;
+          function step() {
+            element.textContent = letters.slice(0, ++length).join('');
+            if (length < letters.length) setTimeout(step, delay);
+          }
+          step();
+        }
+      });
+      observer.observe(opening);
+    }
+  });
+</script>

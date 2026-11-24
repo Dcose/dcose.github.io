@@ -1,0 +1,118 @@
+.scroll-line {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  height: 2px;
+  pointer-events: none;
+  transform-origin: 0%;
+  transform: scaleX(0);
+  background: var(--accent);
+}
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+.splash canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.skip:focus { position: fixed; z-index: 62; }
+
+/* Quiet Header */
+.mast {
+  padding-top: 32px;
+}
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+}
+.brand-cluster {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.brand img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+.white-mark, [data-theme='dark'] .black-mark { display: none; }
+[data-theme='dark'] .white-mark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .black-mark { display: none; }
+  :root:not([data-theme]) .white-mark { display: block; }
+}
+.brand-theme {
+  margin-top: -5px;
+  margin-left: 2px;
+}
+#theme {
+  min-width: 0;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+  font: 700 11px/1 var(--sans);
+  transition: color .2s;
+}
+#theme span { display: block; }
+#theme:hover { color: var(--ink); }
+
+.mast-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+.mast-actions button,
+.mast-actions a {
+  color: var(--muted);
+  transition: color .2s;
+}
+.mast-actions button:hover,
+.mast-actions a:hover {
+  color: var(--ink);
+}
+.mast-splash {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.mast-splash svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+:root:not([data-splash='off']) .splash-off-mark,
+:root[data-splash='off'] .splash-on-mark {
+  display: none;
+}
+:root:not([data-splash='off']) .mast-splash {
+  color: var(--accent);
+}
+:root:not([data-splash='off']) .mast-splash:hover {
+  color: var(--ink);
+}

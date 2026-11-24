@@ -1,0 +1,222 @@
+/* Knowledge Graph */
+.graph-wrap {
+  padding: 28px 0 72px;
+}
+.graph-shell {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  overflow: hidden;
+}
+.graph-shell svg.kg {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  touch-action: none;
+}
+.kg-guide {
+  fill: none;
+  stroke: var(--line);
+}
+.kg-guide-inner {
+  stroke-dasharray: 2 4;
+}
+.kg-edge-halo {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5.5;
+  stroke-linecap: round;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kg-edge-halo.is-lit {
+  opacity: 0.11;
+}
+.kg-edge {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.35;
+  transition: stroke .38s cubic-bezier(0.4, 0, 0.2, 1), opacity .38s cubic-bezier(0.4, 0, 0.2, 1), stroke-width .38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kg-edge.post-ref {
+  stroke-dasharray: 3 3;
+  stroke: color-mix(in srgb, var(--ink) 18%, transparent);
+}
+.kg-edge.is-lit {
+  stroke: color-mix(in srgb, var(--accent) 42%, var(--line));
+  stroke-width: 1.55;
+  opacity: 1;
+}
+.kg-edge.is-dim { opacity: .16; }
+
+@keyframes kg-orb-loop {
+  0% { stroke-dashoffset: 100; opacity: 0; }
+  18% { opacity: 0.96; }
+  82% { opacity: 0.96; }
+  100% { stroke-dashoffset: -1; opacity: 0; }
+}
+@keyframes kg-orb-glow-loop {
+  0% { stroke-dashoffset: 100; opacity: 0; }
+  20% { opacity: 0.24; }
+  80% { opacity: 0.24; }
+  100% { stroke-dashoffset: -1; opacity: 0; }
+}
+.kg-edge-orb,
+.kg-edge-orb-glow {
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-dasharray: 0.1 120;
+  opacity: 0;
+  pointer-events: none;
+}
+.kg-edge-orb {
+  stroke-width: 3.8;
+}
+.kg-edge-orb-glow {
+  stroke-width: 8.5;
+}
+.kg-edge-orb.is-lit {
+  animation: kg-orb-loop 2.45s cubic-bezier(0.45, 0.05, 0.25, 0.95) infinite;
+}
+.kg-edge-orb-glow.is-lit {
+  animation: kg-orb-glow-loop 2.45s cubic-bezier(0.45, 0.05, 0.25, 0.95) infinite;
+}
+
+.kg-node {
+  cursor: pointer;
+  transition: opacity .38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kg-node.is-dim { opacity: .22; }
+.kg-node.tag circle.dot {
+  fill: var(--paper);
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  transition: stroke .32s cubic-bezier(0.4, 0, 0.2, 1), fill .32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kg-node.tag text.label {
+  font: 11.5px var(--mono);
+  fill: var(--ink-2);
+  transition: fill .32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kg-node.tag:hover circle.dot,
+.kg-node.tag.is-active circle.dot {
+  stroke: var(--accent);
+  fill: color-mix(in srgb, var(--accent) 14%, var(--paper));
+}
+.kg-node.tag:hover text.label,
+.kg-node.tag.is-active text.label {
+  fill: var(--accent);
+}
+.kg-node.note circle.dot {
+  fill: var(--ink);
+  stroke: var(--paper);
+  stroke-width: 2;
+  transition: fill .32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kg-node.note text.label {
+  font: 500 12.5px var(--serif);
+  fill: var(--ink);
+  transition: fill .32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kg-node.note:hover circle.dot,
+.kg-node.note.is-active circle.dot {
+  fill: var(--accent);
+}
+.kg-node.note:hover text.label,
+.kg-node.note.is-active text.label {
+  fill: var(--accent);
+}
+
+.graph-shell-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 9px 14px;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper-2) 55%, var(--paper));
+  font-size: 12px;
+  color: var(--muted);
+}
+.graph-foot-info {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 20px;
+}
+.graph-foot-info strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.graph-foot-meta {
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.graph-foot-ctrl {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+.foot-btn {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--accent);
+  transition: opacity .15s, color .15s;
+}
+.foot-btn:hover { opacity: .75; }
+.foot-btn.muted { color: var(--muted); }
+.foot-btn.muted:hover { color: var(--ink); opacity: 1; }
+
+.graph-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend-dot-tag {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--muted);
+  background: var(--paper);
+}
+.legend-dot-note {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.legend-dash {
+  width: 14px;
+  height: 0;
+  border-top: 1.5px dashed color-mix(in srgb, var(--ink) 28%, transparent);
+}
+.graph-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.graph-mode-switch button {
+  color: var(--muted);
+  transition: color .15s;
+}
+.graph-mode-switch button:hover { color: var(--ink); }
+.graph-mode-switch button.is-active {
+  color: var(--accent);
+  font-weight: 600;
+}

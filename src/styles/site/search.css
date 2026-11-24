@@ -1,0 +1,70 @@
+/* Command Palette (⌘K) */
+.cmd-modal { margin: 0; padding: 0; border: 0; background: transparent; color: inherit; overflow: visible; }
+.cmd-modal::backdrop { background: transparent; }
+.cmd-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: min(20vh, 150px);
+}
+.cmd-dialog {
+  width: min(480px, calc(100% - 32px));
+  background: var(--modal-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+.cmd-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.cmd-input-wrap input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+}
+.cmd-esc {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.cmd-results {
+  padding: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.cmd-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  text-align: left;
+  transition: background-color .22s cubic-bezier(0.4, 0, 0.2, 1), color .22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cmd-item:hover { background: var(--paper-2); }
+.cmd-item small {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.cmd-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}

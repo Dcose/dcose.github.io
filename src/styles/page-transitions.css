@@ -1,0 +1,50 @@
+@keyframes kyanite-blur-out {
+  from {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateY(-3px);
+  }
+}
+@keyframes kyanite-blur-in {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(6px);
+  }
+  64% {
+    opacity: .94;
+    filter: blur(.5px);
+    transform: translateY(1px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+  .reader-layout .articlehead h1 {
+    view-transition-name: article-title;
+  }
+  ::view-transition-group(article-title) {
+    animation: none;
+  }
+  ::view-transition-old(main-stage), ::view-transition-old(article-title) {
+    animation: kyanite-blur-out 210ms ease-in-out both;
+  }
+  ::view-transition-new(main-stage) {
+    animation: kyanite-blur-in 460ms 30ms cubic-bezier(.32,.44,.26,1) both;
+  }
+  ::view-transition-new(article-title) {
+    animation: kyanite-blur-in 330ms cubic-bezier(.3,.48,.25,1) both;
+  }
+}

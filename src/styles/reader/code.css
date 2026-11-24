@@ -1,0 +1,145 @@
+/* 代码块（翡翠绿配色 · 无框衬线语言标 · 左侧 6px 圆点 Hover） */
+:root {
+  --tok-key: light-dark(#059669, #34d399);
+  --tok-str: light-dark(#ea580c, #ff7a33);
+  --tok-bool: light-dark(#4f46e5, #818cf8);
+  --tok-fn: light-dark(#be123c, #fb7185);
+  --tok-num: light-dark(#0284c7, #38bdf8);
+  --tok-cmt: light-dark(#8a8880, #666560);
+  --tok-punc: light-dark(#8a8880, #6e6d68);
+}
+.code-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: var(--muted);
+  transition: color .15s, background-color .15s;
+}
+.code-icon-btn:hover { color: var(--accent); background: var(--paper-2); }
+.code-icon-btn.is-copied { color: var(--accent); }
+.copy-status:not(.copy-error) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.copy-status.copy-error { padding: 4px 16px; font: 12px/1.5 var(--sans); color: var(--ink-2); }
+.code-icon-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.prose .code-block {
+  margin: 1.25em 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  overflow: hidden;
+}
+.prose .code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 8px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.prose .lang-label {
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+}
+.prose .code-block pre.astro-code {
+  margin: 0;
+  padding: 14px 18px 14px 28px;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: var(--ink) !important;
+  font: 13px/1.75 var(--mono);
+  overflow-x: auto;
+}
+.prose .code-block pre.astro-code .line {
+  position: relative;
+  display: inline-block;
+  min-width: 100%;
+  padding: 0 6px;
+  margin: 0 -6px;
+  border-radius: 4px;
+  transition: background-color .15s ease, opacity .18s ease;
+}
+.prose .code-block pre.astro-code .line::before {
+  content: "";
+  position: absolute;
+  left: -13px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  transform: translateY(-50%) scale(0.4);
+  transition: opacity .16s ease, transform .16s ease;
+}
+.prose .code-block pre.astro-code:hover .line:not(:hover) { opacity: 0.55; }
+.prose .code-block pre.astro-code .line:hover {
+  background: color-mix(in srgb, var(--paper-2) 60%, transparent);
+}
+.prose .code-block pre.astro-code .line:hover::before {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+/* 将 Shiki github-dark 颜色映射为翡翠绿 × 炽烈橙主题 */
+.prose .code-block pre.astro-code span[style*="#79B8FF"] { color: var(--tok-key) !important; font-weight: 500; }
+.prose .code-block pre.astro-code span[style*="#9ECBFF"] { color: var(--tok-str) !important; }
+.prose .code-block pre.astro-code span[style*="#F97583"] { color: var(--tok-bool) !important; font-weight: 500; }
+.prose .code-block pre.astro-code span[style*="#B392F0"] { color: var(--tok-fn) !important; }
+.prose .code-block pre.astro-code span[style*="#FFAB70"] { color: var(--tok-num) !important; }
+.prose .code-block pre.astro-code span[style*="#6A737D"] { color: var(--tok-cmt) !important; font-style: italic; }
+.prose .code-block pre.astro-code span[style*="#E1E4E8"] { color: var(--tok-punc) !important; }
+
+/* 日志块（极简悬浮 + 虚线边框 + Hover 弱化其余行） */
+.prose .log-wrap {
+  position: relative;
+  margin: 1.25em 0;
+  border-radius: 8px;
+  background: var(--paper);
+  border: 1px dashed color-mix(in srgb, var(--ink) 16%, transparent);
+  overflow: hidden;
+}
+.prose .log-float-head {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 11px var(--mono);
+  color: var(--muted);
+  z-index: 2;
+}
+.prose .log-list {
+  padding: 14px 16px;
+  display: grid;
+  gap: 4px;
+  font: 12.5px/1.65 var(--mono);
+  overflow-x: auto;
+}
+.prose .log-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: pre;
+  transition: background-color .16s ease, opacity .2s ease;
+}
+.prose .log-list:hover .log-row:not(:hover) { opacity: 0.35; }
+.prose .log-row:hover { background: var(--paper-2); }
+.prose .log-idx { color: var(--muted); font-size: 11px; min-width: 18px; user-select: none; }
+.prose .log-prefix { color: var(--muted); }
+.prose .log-done { color: var(--accent); font-weight: 600; }
+.prose .log-str { color: var(--tok-str); }

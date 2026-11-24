@@ -1,0 +1,81 @@
+.toc { padding: 12px 0 14px; }
+.toc-summary {
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.toc-summary::-webkit-details-marker { display: none; }
+.toc-title { font-family: var(--serif); font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.toc-meta { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font: 11px/1.6 var(--mono); }
+.toc-chevron { display: none; transition: transform .2s ease; }
+.toc[open] .toc-chevron { transform: rotate(180deg); }
+.toc-list {
+  display: grid;
+  gap: 2px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  border-left: 1px solid var(--line);
+}
+.toc-list li {
+  margin-left: -1px;
+  border-left: 1.5px solid transparent;
+  transition: border-color .2s ease, opacity .2s ease;
+}
+.toc-list a {
+  display: block;
+  padding: 5px 8px 5px 14px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.55;
+  text-decoration: none;
+  transition: color .18s ease;
+}
+.toc-list.has-active li:not(.is-active):not(:hover) { opacity: 0.52; }
+.toc-list li.is-active { border-left-color: var(--accent); }
+.toc-list li.is-active a,
+.toc-list li:hover a { color: var(--accent); }
+
+@media (min-width: 1160px) {
+  .toc {
+    --toc-left: calc(50% + 364px);
+    position: fixed;
+    top: 50%;
+    left: var(--toc-left);
+    transform: translateY(-50%);
+    width: min(192px, calc(100% - var(--toc-left) - 20px));
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    padding: 0;
+  }
+  .toc-summary { pointer-events: none; }
+}
+
+@media (max-width: 1159px) {
+  .reader-layout { width: min(680px, calc(100% - 48px)); display: flex; flex-direction: column; gap: 0; }
+  .toc {
+    position: static;
+    order: 0;
+    width: 100%;
+    margin: 24px 0 0;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--paper-2) 45%, var(--paper));
+  }
+  .toc-chevron { display: inline; }
+  .reader { padding: 24px 0 48px; }
+  .reader-layout > .reader { order: 1; width: auto; margin: 0; }
+}
+
+@media (max-width: 640px) {
+  .wrap { width: calc(100% - 32px); }
+  h1 { font-size: 1.9rem; }
+  .reader-layout, .reader { width: calc(100% - 32px); }
+  .articlehead h1 { font-size: 1.75rem; }
+}

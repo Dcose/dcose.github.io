@@ -1,0 +1,8 @@
+@media (max-width: 600px) {
+  .opening { padding: 56px 0 40px; }
+  .post-head { flex-direction: column; gap: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash { display: none; }
+  .kg-edge-orb.is-lit, .kg-edge-orb-glow.is-lit { animation: none; opacity: 0; }
+}
