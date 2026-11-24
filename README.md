@@ -5,18 +5,19 @@
 ## 本地开发
 
 项目要求 Node.js `>=24.18.1 <25`。
+项目使用 pnpm `11.22.0` 管理依赖。
 
 ```bash
-npm ci
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 其他命令：
 
 ```bash
-npm run check     # 类型与 Astro 检查
-npm run build     # 构建到 dist/
-npm run preview   # 预览构建结果
+pnpm run check     # 类型与 Astro 检查
+pnpm run build     # 构建到 dist/
+pnpm run preview   # 预览构建结果
 ```
 
 ## 编写文章
@@ -65,4 +66,4 @@ summary: 可选摘要
 
 GitHub Pages 使用 GitHub Actions 发布。将仓库 Pages 的 Source 设置为 **GitHub Actions**，推送到 `main` 即可触发发布，也可以手动运行 `Publish Kyanite` 工作流。
 
-工作流会执行 `npm ci`、`npm run check` 和 `npm run build`，然后部署 `dist/`。
+工作流会执行 `pnpm install --frozen-lockfile`、`pnpm run check` 和 `pnpm run build`，然后部署 `dist/`。
