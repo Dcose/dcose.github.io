@@ -34,13 +34,18 @@ export default function Masthead() {
     };
   }, []);
 
+  function syncFavicon(isDark: boolean) {
+    const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (icon) icon.href = `/favicon_${isDark ? 'white' : 'black'}.ico`;
+  }
+
   useEffect(() => {
     const system = matchMedia('(prefers-color-scheme: dark)');
     function sync() {
       const choice = document.documentElement.dataset.theme;
       const resolved = choice ? choice === 'dark' : system.matches;
       setDark(resolved);
-      document.querySelector<HTMLLinkElement>('link[rel="icon"]')!.href = `/favicon_${resolved ? 'white' : 'black'}.ico`;
+      syncFavicon(resolved);
     }
     sync();
     system.addEventListener('change', sync);
@@ -48,12 +53,13 @@ export default function Masthead() {
   }, []);
 
   function toggle() {
-    const theme = dark ? 'light' : 'dark';
+    const nextDark = !dark;
+    const theme = nextDark ? 'dark' : 'light';
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem('kyanite-theme', theme); } catch {}
-    document.querySelector<HTMLLinkElement>('link[rel="icon"]')!.href = `/favicon_${dark ? 'black' : 'white'}.ico`;
+    syncFavicon(nextDark);
     setToggled(true);
-    setDark(!dark);
+    setDark(nextDark);
   }
 
   function toggleSplash() {
@@ -75,8 +81,7 @@ export default function Masthead() {
         <nav className="wrap nav" aria-label="主导航">
           <div className="brand-cluster">
             <a href="/" className="brand" aria-label="Kyanite 首页">
-              <img className="black-mark" src="/assets/Logo_black.png" alt="" />
-              <img className="white-mark" src="/assets/Logo_white.png" alt="" />
+              <span className="brand-mark" aria-hidden="true" />
               <span>Kyanite</span>
             </a>
             <div className="brand-theme">

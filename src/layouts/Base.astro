@@ -30,22 +30,31 @@ const cmdTags = Object.entries(getTagCounts(cmdPosts))
   <link rel="icon" href="/favicon_black.ico"/>
   <ClientRouter />
   <script is:inline>
-    function syncKyanitePrefs() {
-      try {
-        const saved = localStorage.getItem('kyanite-theme');
-        if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved;
-        const splash = localStorage.getItem('kyanite-splash');
-        if (splash === 'on' || splash === 'off') document.documentElement.dataset.splash = splash;
-      } catch {}
-    }
-    syncKyanitePrefs();
-    document.addEventListener('astro:after-swap', syncKyanitePrefs);
+    (() => {
+      function syncKyanitePrefs() {
+        try {
+          const saved = localStorage.getItem('kyanite-theme');
+          if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved;
+          const splash = localStorage.getItem('kyanite-splash');
+          if (splash === 'on' || splash === 'off') document.documentElement.dataset.splash = splash;
+        } catch {}
+        const choice = document.documentElement.dataset.theme;
+        const dark = choice ? choice === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        const icon = document.querySelector('link[rel="icon"]');
+        if (icon) icon.setAttribute('href', `/favicon_${dark ? 'white' : 'black'}.ico`);
+      }
+      syncKyanitePrefs();
+      if (!window.__kyanitePrefsBound) {
+        window.__kyanitePrefsBound = true;
+        document.addEventListener('astro:after-swap', syncKyanitePrefs);
+      }
+    })();
   </script>
 </head><body>
   <a class="skip" href="#main">跳到正文</a>
   <Masthead client:load transition:persist="masthead"/>
   <CommandPalette posts={cmdPosts} tags={cmdTags} client:load transition:persist="cmd-palette"/>
-  <SplashCursor client:media="(prefers-reduced-motion: no-preference)" transition:persist="splash-cursor"/>
+  <SplashCursor client:media="(prefers-reduced-motion: no-preference) and (pointer: fine)" transition:persist="splash-cursor"/>
   <main id="main" transition:name="main-stage" transition:animate="none"><slot/></main>
   <footer class="wrap site-credit"><span>Made with ❤️ by Dcose Team</span><a href="/about/">关于 Kyanite</a></footer>
 </body></html>

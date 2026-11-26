@@ -24,6 +24,7 @@ interface Props {
 export default function CommandPalette({ posts, tags }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const openRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDialogElement>(null);
 
@@ -50,8 +51,11 @@ export default function CommandPalette({ posts, tags }: Props) {
   }, []);
 
   useEffect(() => {
+    openRef.current = open;
+    const modal = modalRef.current;
+    if (!modal) return;
     if (open) {
-      modalRef.current?.showModal();
+      if (!modal.open) modal.showModal();
       inputRef.current?.focus();
     }
   }, [open]);
@@ -82,6 +86,7 @@ export default function CommandPalette({ posts, tags }: Props) {
         ref={modalRef}
         className="cmd-modal"
         aria-label="搜索文章或标签"
+        onClose={() => setOpen(false)}
         onCancel={event => { event.preventDefault(); setOpen(false); }}
         onKeyDown={event => {
           if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
@@ -99,7 +104,13 @@ export default function CommandPalette({ posts, tags }: Props) {
           }
         }}
       >
-      <AnimatePresence onExitComplete={() => modalRef.current?.close()}>
+      <AnimatePresence
+        onExitComplete={() => {
+          if (!openRef.current && modalRef.current?.open) {
+            modalRef.current.close();
+          }
+        }}
+      >
         {open && (
           <motion.div
             className="cmd-backdrop"

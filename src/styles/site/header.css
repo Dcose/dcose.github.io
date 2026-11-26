@@ -45,16 +45,13 @@
   font-size: 15px;
   letter-spacing: -0.01em;
 }
-.brand img {
+.brand-mark {
   width: 20px;
   height: 20px;
-  object-fit: contain;
-}
-.white-mark, [data-theme='dark'] .black-mark { display: none; }
-[data-theme='dark'] .white-mark { display: block; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .black-mark { display: none; }
-  :root:not([data-theme]) .white-mark { display: block; }
+  flex-shrink: 0;
+  background-color: var(--ink);
+  -webkit-mask: url('/assets/logo-mark.png') center / contain no-repeat;
+  mask: url('/assets/logo-mark.png') center / contain no-repeat;
 }
 .brand-theme {
   margin-top: -5px;

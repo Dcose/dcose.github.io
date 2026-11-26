@@ -54,9 +54,13 @@ function pointerPrototype(): Pointer {
   };
 }
 
+const DEFAULT_BACK_COLOR: ColorRGB = { r: 0.5, g: 0, b: 0 };
+const IDLE_TIMEOUT_MS = 3500;
+const MAX_PIXEL_RATIO = 2;
+
 export default function SplashCursor({
   SIM_RESOLUTION = 128,
-  DYE_RESOLUTION = 1440,
+  DYE_RESOLUTION = 768,
   CAPTURE_RESOLUTION = 512,
   DENSITY_DISSIPATION = 3.5,
   VELOCITY_DISSIPATION = 2,
@@ -67,22 +71,29 @@ export default function SplashCursor({
   SPLAT_FORCE = 6000,
   SHADING = true,
   COLOR_UPDATE_SPEED = 10,
-  BACK_COLOR = { r: 0.5, g: 0, b: 0 },
+  BACK_COLOR = DEFAULT_BACK_COLOR,
   TRANSPARENT = true
 }: SplashCursorProps) {
-  const [enabled, setEnabled] = useState<boolean>(() => {
-    if (typeof document === 'undefined') return true;
-    return document.documentElement.dataset.splash !== 'off';
-  });
+  const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    if (document.documentElement.dataset.splash === 'off') setEnabled(false);
-    const handler = (event: Event) => {
-      const next = (event as CustomEvent<{ mode?: SplashMode }>).detail?.mode;
-      if (next === 'on' || next === 'off') setEnabled(next === 'on');
+    const media = matchMedia('(prefers-reduced-motion: no-preference) and (pointer: fine)');
+    const sync = (mode?: SplashMode) => {
+      const pref = mode ?? document.documentElement.dataset.splash;
+      setEnabled(pref !== 'off' && media.matches);
     };
-    window.addEventListener('kyanite:splash-change', handler);
-    return () => window.removeEventListener('kyanite:splash-change', handler);
+    sync();
+    const onSplashChange = (event: Event) => {
+      const next = (event as CustomEvent<{ mode?: SplashMode }>).detail?.mode;
+      if (next === 'on' || next === 'off') sync(next);
+    };
+    const onMediaChange = () => sync();
+    window.addEventListener('kyanite:splash-change', onSplashChange);
+    media.addEventListener('change', onMediaChange);
+    return () => {
+      window.removeEventListener('kyanite:splash-change', onSplashChange);
+      media.removeEventListener('change', onMediaChange);
+    };
   }, []);
 
   if (!enabled) return null;
@@ -109,7 +120,7 @@ export default function SplashCursor({
 
 function SplashCanvas({
   SIM_RESOLUTION = 128,
-  DYE_RESOLUTION = 1440,
+  DYE_RESOLUTION = 768,
   CAPTURE_RESOLUTION = 512,
   DENSITY_DISSIPATION = 3.5,
   VELOCITY_DISSIPATION = 2,
@@ -120,7 +131,7 @@ function SplashCanvas({
   SPLAT_FORCE = 6000,
   SHADING = true,
   COLOR_UPDATE_SPEED = 10,
-  BACK_COLOR = { r: 0.5, g: 0, b: 0 },
+  BACK_COLOR = DEFAULT_BACK_COLOR,
   TRANSPARENT = true
 }: SplashCursorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -274,11 +285,19 @@ function SplashCanvas({
       gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, 4, 4, 0, format, type, null);
 
       const fbo = gl.createFramebuffer();
-      if (!fbo) return false;
+      if (!fbo) {
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.deleteTexture(texture);
+        return false;
+      }
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
       const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.deleteFramebuffer(fbo);
+      gl.deleteTexture(texture);
       return status === gl.FRAMEBUFFER_COMPLETE;
     }
 
@@ -301,6 +320,10 @@ function SplashCanvas({
       return keywordsString + source;
     }
 
+    const createdShaders: WebGLShader[] = [];
+    const createdPrograms: WebGLProgram[] = [];
+    const createdBuffers: WebGLBuffer[] = [];
+
     function compileShader(type: number, source: string, keywords: string[] | null = null): WebGLShader | null {
       const shaderSource = addKeywords(source, keywords);
       const shader = gl.createShader(type);
@@ -310,6 +333,7 @@ function SplashCanvas({
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
         console.trace(gl.getShaderInfoLog(shader));
       }
+      createdShaders.push(shader);
       return shader;
     }
 
@@ -323,6 +347,7 @@ function SplashCanvas({
       if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
         console.trace(gl.getProgramInfoLog(program));
       }
+      createdPrograms.push(program);
       return program;
     }
 
@@ -689,9 +714,11 @@ function SplashCanvas({
 
     const blit = (() => {
       const buffer = gl.createBuffer()!;
+      createdBuffers.push(buffer);
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, -1, 1, 1, 1, 1, -1]), gl.STATIC_DRAW);
       const elemBuffer = gl.createBuffer()!;
+      createdBuffers.push(elemBuffer);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elemBuffer);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
       gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
@@ -809,6 +836,18 @@ function SplashCanvas({
       };
     }
 
+    function destroyFBO(target?: FBO) {
+      if (!target) return;
+      gl.deleteFramebuffer(target.fbo);
+      gl.deleteTexture(target.texture);
+    }
+
+    function destroyDoubleFBO(target?: DoubleFBO) {
+      if (!target) return;
+      destroyFBO(target.read);
+      destroyFBO(target.write);
+    }
+
     function resizeFBO(
       target: FBO,
       w: number,
@@ -822,6 +861,7 @@ function SplashCanvas({
       copyProgram.bind();
       if (copyProgram.uniforms.uTexture) gl.uniform1i(copyProgram.uniforms.uTexture, target.attach(0));
       blit(newFBO, false);
+      destroyFBO(target);
       return newFBO;
     }
 
@@ -836,6 +876,7 @@ function SplashCanvas({
     ) {
       if (target.width === w && target.height === h) return target;
       target.read = resizeFBO(target.read, w, h, internalFormat, format, type, param);
+      destroyFBO(target.write);
       target.write = createFBO(w, h, internalFormat, format, type, param);
       target.width = w;
       target.height = h;
@@ -875,6 +916,9 @@ function SplashCanvas({
         );
       }
 
+      destroyFBO(divergence);
+      destroyFBO(curl);
+      destroyDoubleFBO(pressure);
       divergence = createFBO(simRes.width, simRes.height, r.internalFormat, r.format, texType, gl.NEAREST);
       curl = createFBO(simRes.width, simRes.height, r.internalFormat, r.format, texType, gl.NEAREST);
       pressure = createDoubleFBO(simRes.width, simRes.height, r.internalFormat, r.format, texType, gl.NEAREST);
@@ -887,8 +931,8 @@ function SplashCanvas({
     }
 
     function getResolution(resolution: number) {
-      const w = gl.drawingBufferWidth;
-      const h = gl.drawingBufferHeight;
+      const w = Math.max(1, gl.drawingBufferWidth);
+      const h = Math.max(1, gl.drawingBufferHeight);
       const aspectRatio = w / h;
       let aspect = aspectRatio < 1 ? 1 / aspectRatio : aspectRatio;
       const min = Math.round(resolution);
@@ -900,25 +944,46 @@ function SplashCanvas({
     }
 
     function scaleByPixelRatio(input: number) {
-      const pixelRatio = window.devicePixelRatio || 1;
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
       return Math.floor(input * pixelRatio);
     }
 
     updateKeywords();
+    resizeCanvas();
     initFramebuffers();
+    pointers[0].color = generateColor();
 
     let lastUpdateTime = Date.now();
     let colorUpdateTimer = 0.0;
-
+    let lastInputTime = 0;
+    let contextLost = false;
     let frame = 0;
     const listeners = new AbortController();
+
+    function wake() {
+      lastInputTime = performance.now();
+      if (frame || document.hidden || contextLost) return;
+      lastUpdateTime = Date.now();
+      frame = requestAnimationFrame(updateFrame);
+    }
+
     function updateFrame() {
+      frame = 0;
+      if (document.hidden || contextLost) return;
       const dt = calcDeltaTime();
       if (resizeCanvas()) initFramebuffers();
       updateColors(dt);
       applyInputs();
       step(dt);
       render(null);
+
+      const hasActivePointer = pointers.some(p => p.down || p.moved);
+      if (!hasActivePointer && performance.now() - lastInputTime >= IDLE_TIMEOUT_MS) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        return;
+      }
       frame = requestAnimationFrame(updateFrame);
     }
 
@@ -933,6 +998,7 @@ function SplashCanvas({
     function resizeCanvas() {
       const width = scaleByPixelRatio(canvas!.clientWidth);
       const height = scaleByPixelRatio(canvas!.clientHeight);
+      if (!width || !height) return false;
       if (canvas!.width !== width || canvas!.height !== height) {
         canvas!.width = width;
         canvas!.height = height;
@@ -1247,56 +1313,67 @@ function SplashCanvas({
       return ((value - min) % range) + min;
     }
 
+    let hasPointerPos = false;
+
+    function syncCanvasBeforeInput() {
+      if (resizeCanvas()) initFramebuffers();
+    }
+
     window.addEventListener('mousedown', e => {
+      if (contextLost) return;
+      syncCanvasBeforeInput();
+      if (!canvas.width || !canvas.height) return;
       const pointer = pointers[0];
       const posX = scaleByPixelRatio(e.clientX);
       const posY = scaleByPixelRatio(e.clientY);
+      hasPointerPos = true;
       updatePointerDownData(pointer, -1, posX, posY);
       clickSplat(pointer);
+      wake();
     }, {signal:listeners.signal});
 
-    function handleFirstMouseMove(e: MouseEvent) {
-      const pointer = pointers[0];
-      const posX = scaleByPixelRatio(e.clientX);
-      const posY = scaleByPixelRatio(e.clientY);
-      const color = generateColor();
-      if (!frame) updateFrame();
-      updatePointerMoveData(pointer, posX, posY, color);
-      document.body.removeEventListener('mousemove', handleFirstMouseMove);
-    }
-    document.body.addEventListener('mousemove', handleFirstMouseMove, {signal:listeners.signal});
+    window.addEventListener('mouseup', () => {
+      updatePointerUpData(pointers[0]);
+    }, {signal:listeners.signal});
+
+    window.addEventListener('blur', () => {
+      updatePointerUpData(pointers[0]);
+    }, {signal:listeners.signal});
 
     window.addEventListener('mousemove', e => {
+      if (contextLost) return;
+      syncCanvasBeforeInput();
+      if (!canvas.width || !canvas.height) return;
       const pointer = pointers[0];
       const posX = scaleByPixelRatio(e.clientX);
       const posY = scaleByPixelRatio(e.clientY);
-      const color = pointer.color;
-      updatePointerMoveData(pointer, posX, posY, color);
-    }, {signal:listeners.signal});
-
-    function handleFirstTouchStart(e: TouchEvent) {
-      const touches = e.targetTouches;
-      const pointer = pointers[0];
-      for (let i = 0; i < touches.length; i++) {
-        const posX = scaleByPixelRatio(touches[i].clientX);
-        const posY = scaleByPixelRatio(touches[i].clientY);
-        if (!frame) updateFrame();
-        updatePointerDownData(pointer, touches[i].identifier, posX, posY);
+      if (!hasPointerPos) {
+        hasPointerPos = true;
+        pointer.texcoordX = posX / canvas.width;
+        pointer.texcoordY = 1 - posY / canvas.height;
+        pointer.prevTexcoordX = pointer.texcoordX;
+        pointer.prevTexcoordY = pointer.texcoordY;
+        return;
       }
-      document.body.removeEventListener('touchstart', handleFirstTouchStart);
-    }
-    document.body.addEventListener('touchstart', handleFirstTouchStart, {signal:listeners.signal});
+      updatePointerMoveData(pointer, posX, posY, pointer.color);
+      wake();
+    }, {signal:listeners.signal});
 
     window.addEventListener(
       'touchstart',
       e => {
+        if (contextLost) return;
+        syncCanvasBeforeInput();
+        if (!canvas.width || !canvas.height) return;
         const touches = e.targetTouches;
         const pointer = pointers[0];
+        hasPointerPos = true;
         for (let i = 0; i < touches.length; i++) {
           const posX = scaleByPixelRatio(touches[i].clientX);
           const posY = scaleByPixelRatio(touches[i].clientY);
           updatePointerDownData(pointer, touches[i].identifier, posX, posY);
         }
+        wake();
       },
       {signal:listeners.signal, passive:true}
     );
@@ -1304,6 +1381,9 @@ function SplashCanvas({
     window.addEventListener(
       'touchmove',
       e => {
+        if (contextLost) return;
+        syncCanvasBeforeInput();
+        if (!canvas.width || !canvas.height) return;
         const touches = e.targetTouches;
         const pointer = pointers[0];
         for (let i = 0; i < touches.length; i++) {
@@ -1311,18 +1391,52 @@ function SplashCanvas({
           const posY = scaleByPixelRatio(touches[i].clientY);
           updatePointerMoveData(pointer, posX, posY, pointer.color);
         }
+        wake();
       },
       {signal:listeners.signal, passive:true}
     );
 
-    window.addEventListener('touchend', e => {
-      const touches = e.changedTouches;
-      const pointer = pointers[0];
-      for (let i = 0; i < touches.length; i++) {
-        updatePointerUpData(pointer);
+    const endTouch = () => {
+      updatePointerUpData(pointers[0]);
+    };
+    window.addEventListener('touchend', endTouch, {signal:listeners.signal});
+    window.addEventListener('touchcancel', endTouch, {signal:listeners.signal});
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        updatePointerUpData(pointers[0]);
+        if (frame) {
+          cancelAnimationFrame(frame);
+          frame = 0;
+        }
+      } else if (!contextLost && lastInputTime > 0 && performance.now() - lastInputTime < IDLE_TIMEOUT_MS) {
+        lastUpdateTime = Date.now();
+        if (!frame) frame = requestAnimationFrame(updateFrame);
       }
     }, {signal:listeners.signal});
-    return () => { listeners.abort(); cancelAnimationFrame(frame); };
+
+    canvas.addEventListener('webglcontextlost', e => {
+      e.preventDefault();
+      contextLost = true;
+      if (frame) {
+        cancelAnimationFrame(frame);
+        frame = 0;
+      }
+    }, {signal:listeners.signal});
+
+    return () => {
+      listeners.abort();
+      if (frame) cancelAnimationFrame(frame);
+      destroyDoubleFBO(dye);
+      destroyDoubleFBO(velocity);
+      destroyFBO(divergence);
+      destroyFBO(curl);
+      destroyDoubleFBO(pressure);
+      createdBuffers.forEach(buf => gl.deleteBuffer(buf));
+      createdPrograms.forEach(prog => gl.deleteProgram(prog));
+      createdShaders.forEach(shader => gl.deleteShader(shader));
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+    };
   }, [
     SIM_RESOLUTION,
     DYE_RESOLUTION,

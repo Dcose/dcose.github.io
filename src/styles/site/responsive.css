@@ -3,6 +3,9 @@
   .post-head { flex-direction: column; gap: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .splash { display: none; }
+  .splash, .mast-splash { display: none; }
   .kg-edge-orb.is-lit, .kg-edge-orb-glow.is-lit { animation: none; opacity: 0; }
+}
+@media (pointer: coarse), (pointer: none) {
+  .splash, .mast-splash { display: none; }
 }
